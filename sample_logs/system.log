@@ -1,0 +1,21 @@
+Timestamp                       Thread     Type        Activity             PID    TTL  
+2025-11-14 08:00:58.112 +0000   0x1a2b     Default     0x0                  1      0    kernel: (Sandbox) Deny file-read-data /Library/Application Support/Acme/config.plist
+2025-11-14 08:00:58.200 +0000   0x1a2c     Info        0x0                  247    0    configd: network reachability changed (kSCNetworkReachabilityFlagsReachable)
+2025-11-14 08:01:00.001 +0000   0x1a3a     Default     0x0                  1      0    kernel: (Sandbox) Deny mach-lookup com.apple.security.keychain-proxy
+2025-11-14 08:01:00.200 +0000   0x3f21     Error       0x0                  312    0    com.apple.security.keychain: SecKeychainItemCopyAttributesAndData: The specified item could not be found in the keychain.
+2025-11-14 08:01:00.201 +0000   0x3f21     Error       0x0                  312    0    com.apple.security.keychain: Error Domain=NSOSStatusErrorDomain Code=-25300 "errSecItemNotFound"
+2025-11-14 08:01:02.341 +0000   0x4a01     Default     0x0                  4412   0    Acme[4412]: Application launched
+2025-11-14 08:01:03.100 +0000   0x4a02     Default     0x0                  4412   0    Acme[4412]: <AuthService> Attempting token refresh
+2025-11-14 08:01:03.210 +0000   0x5500     Error       0x0                  247    0    configd: nwpath evaluation error: no route to host (acme.internal)
+2025-11-14 08:01:03.440 +0000   0x4a02     Error       0x0                  4412   0    Acme[4412]: <AuthService> NSURLSession task failed: NSURLErrorDomain -1009
+2025-11-14 08:01:03.441 +0000   0x1000     Fault       0x0                  1      0    kernel: proc 4412 (Acme): sandbox violation: deny network-outbound to auth.acme.internal:443
+2025-11-14 08:15:00.010 +0000   0x4b10     Default     0x0                  4412   0    Acme[4412]: <DatabaseManager> Attempting SQLite operation
+2025-11-14 08:15:00.011 +0000   0x4b11     Default     0x0                  4219   0    AcmeSyncHelper[4219]: <DatabaseManager> Acquired SQLite write lock
+2025-11-14 08:15:00.015 +0000   0x4b10     Error       0x0                  4412   0    Acme[4412]: <DatabaseManager> SQLITE_BUSY: lock held by PID 4219
+2025-11-14 08:30:11.900 +0000   0x1b00     Default     0x0                  1      0    kernel: memorystatus: killing_on_behalf_of pid 4412 [Acme], priority 10, footprint 418MB
+2025-11-14 08:30:12.000 +0000   0x1b01     Fault       0x0                  1      0    kernel: (VM) Acme[4412] page reclaim pressure level HIGH
+2025-11-14 08:45:03.100 +0000   0x4c00     Default     0x0                  4412   0    Acme[4412]: <PluginManager> Loading AcmeDocProcessor
+2025-11-14 08:45:03.150 +0000   0x1000     Fault       0x0                  1      0    kernel: (AMFI) Acme[4412]: rejecting load of /Library/Application Support/Acme/Plugins/AcmeDocProcessor.plugin: library validation failed
+2025-11-14 08:45:03.151 +0000   0x4c01     Error       0x0                  4412   0    Acme[4412]: dyld[4412]: Library not loaded (AMFI policy violation)
+2025-11-14 09:00:00.098 +0000   0x5600     Error       0x0                  247    0    configd: DNS proxy unavailable - mDNSResponder error: kDNSServiceErr_NoRouter
+2025-11-14 09:00:00.099 +0000   0x5601     Error       0x0                  247    0    configd: Split DNS domains unreachable: [acme.internal, auth.acme.internal, api.acme.internal]

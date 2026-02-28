@@ -1,0 +1,52 @@
+Process:               Acme [4412]
+Path:                  /Applications/Acme.app/Contents/MacOS/Acme
+Identifier:            com.acme.enterprise
+Version:               4.2.1 (1041)
+Code Type:             ARM-64 (Native)
+Parent Process:        launchd [1]
+Responsible:           Acme [4412]
+User ID:               501
+
+Date/Time:             2025-11-14 08:30:15.441 +0000
+OS Version:            macOS 14.1.1 (23B81)
+Report Version:        12
+
+Exception Type:        EXC_BAD_ACCESS (SIGSEGV)
+Exception Subtype:     KERN_INVALID_ADDRESS at 0x0000000000000000
+Exception Codes:       0x0000000000000001, 0x0000000000000000
+VM Region Info: 0 is not in any region. Bytes before following region: 4295507968
+    REGION TYPE                      START - END        [ VSIZE] PRT/MAX SHRMOD  REGION DETAIL
+    UNUSED SPACE AT START
+--->  
+    __TEXT                 0000000100d44000-0000000100e9c000 [ 1376K] r-x/r-x SM=COW  /Applications/Acme.app/Contents/MacOS/Acme
+
+Termination Signal:    Segmentation fault: 11
+Termination Reason:    Namespace SIGNAL, Code 0xb
+Terminating Process:   exc handler [4412]
+
+Thread 0 Crashed:: Dispatch queue: com.apple.main-thread
+0   libobjc.A.dylib                	0x00000001913ab5fc objc_msgSend + 28
+1   Acme                           	0x0000000100d8a201 -[SyncEngine processQueuedUploads] + 512
+2   Acme                           	0x0000000100d8c100 -[SyncEngine backgroundSyncTask] + 88
+3   Foundation                     	0x00000001918abcd4 __NSThreadPerformPerform + 124
+4   CoreFoundation                 	0x000000019182bcf0 __CFRUNLOOP_IS_CALLING_OUT_TO_A_SOURCE0_PERFORM_FUNCTION__ + 28
+
+Thread 1:: com.acme.network
+0   libsystem_kernel.dylib         	0x0000000191b12a10 kevent_id + 8
+1   libdispatch.dylib              	0x0000000191520240 _dispatch_kq_drain + 312
+
+Thread 2:: com.acme.database
+0   libsystem_kernel.dylib         	0x0000000191b0d564 pread + 8
+1   libsqlite3.dylib               	0x0000000192a22100 sqlite3OsRead + 56
+2   libsqlite3.dylib               	0x0000000192a1bc40 btreeNext + 240
+3   Acme                           	0x0000000100da1320 -[DatabaseManager executeQuery:] + 204
+
+Application Specific Information:
+Crashed during sync retry after auth failure. Memory footprint was 418MB at time of crash.
+Last log entries before crash:
+  [CRITICAL] SyncEngine - Sync failed: no valid auth token
+  [WARN] MemoryMonitor - Memory pressure HIGH
+
+Binary Images:
+0x100d44000 - 0x100e9bfff  com.acme.enterprise (4.2.1) <A1B2C3D4-E5F6-7890-ABCD-EF1234567890>  /Applications/Acme.app/Contents/MacOS/Acme
+0x1913a0000 - 0x1913e1fff  libobjc.A.dylib (906.2) <system>                                    /usr/lib/libobjc.A.dylib

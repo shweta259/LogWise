@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LogWise — macOS Log Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0a0b0e;
+    --surface:  #111318;
+    --surface2: #191c23;
+    --border:   #1e2230;
+    --border2:  #252a38;
+    --text:     #c8cdd8;
+    --text-dim: #5a6075;
+    --text-bright: #eef0f5;
+    --accent:   #4f8ef7;
+    --accent2:  #7c5cfc;
+    --green:    #2eb87a;
+    --yellow:   #e8a735;
+    --red:      #e85454;
+    --red2:     #b83535;
+    --orange:   #e87040;
+    --purple:   #9b6ef7;
+    --mono:     'IBM Plex Mono', monospace;
+    --sans:     'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Subtle scanline texture */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.03) 2px, rgba(0,0,0,.03) 4px);
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(10,11,14,.95);
+    position: sticky; top: 0; z-index: 100;
+    backdrop-filter: blur(12px);
+  }
+
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 30px; height: 30px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 16px; font-weight: 600;
+    color: #fff;
+  }
+  .logo-text { font-weight: 600; font-size: 16px; color: var(--text-bright); letter-spacing: -.3px; }
+  .logo-sub  { font-size: 11px; color: var(--text-dim); font-family: var(--mono); margin-top: 1px; }
+
+  .header-right {
+    display: flex; align-items: center; gap: 16px;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+  }
+  .badge-ai    { color: var(--accent2); border-color: rgba(124,92,252,.3); background: rgba(124,92,252,.08); }
+  .badge-rules { color: var(--text-dim); border-color: var(--border2); }
+
+  /* ── Layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: calc(100vh - 62px);
+  }
+
+  /* ── Sidebar ── */
+  aside {
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    background: var(--surface);
+  }
+
+  .upload-zone {
+    border: 1.5px dashed var(--border2);
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all .2s;
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: rgba(79,142,247,.05); }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 28px; margin-bottom: 8px; }
+  .upload-label { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+  .upload-label strong { color: var(--text); display: block; margin-bottom: 4px; }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    padding: 0 4px;
+  }
+
+  .file-list { margin-bottom: 24px; }
+  .file-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 8px;
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+  }
+  .file-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+  .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-size { color: var(--text-dim); font-size: 10px; flex-shrink: 0; }
+
+  .btn-analyze {
+    width: 100%;
+    padding: 11px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+    letter-spacing: .2px;
+  }
+  .btn-analyze:hover { opacity: .9; }
+  .btn-analyze:active { transform: scale(.98); }
+  .btn-analyze:disabled { opacity: .5; cursor: not-allowed; }
+
+  .stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 8px; margin-top: 24px;
+  }
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .stat-num {
+    font-family: var(--mono);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
+  .num-red    { color: var(--red); }
+  .num-yellow { color: var(--yellow); }
+  .num-orange { color: var(--orange); }
+  .num-blue   { color: var(--accent); }
+
+  /* ── Main content ── */
+  main {
+    padding: 28px 32px;
+    overflow-y: auto;
+  }
+
+  /* ── Loading state ── */
+  #loading {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 16px;
+  }
+  #loading.active { display: flex; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid var(--border2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-family: var(--mono); font-size: 12px; color: var(--text-dim); }
+
+  /* ── Empty state ── */
+  #empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 60vh;
+    gap: 12px;
+    text-align: center;
+  }
+  #empty-state.hidden { display: none; }
+  .empty-icon { font-size: 48px; opacity: .3; margin-bottom: 8px; }
+  .empty-title { font-size: 18px; font-weight: 600; color: var(--text-bright); }
+  .empty-sub { font-size: 13px; color: var(--text-dim); max-width: 380px; line-height: 1.7; }
+
+  /* ── Results ── */
+  #results { display: none; }
+  #results.active { display: block; }
+
+  .results-header {
+    display: flex; align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    gap: 16px;
+  }
+  .results-title { font-size: 20px; font-weight: 600; color: var(--text-bright); margin-bottom: 4px; }
+  .results-meta  { font-family: var(--mono); font-size: 11px; color: var(--text-dim); }
+
+  /* ── Severity banner ── */
+  .severity-banner {
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    border: 1px solid;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .severity-banner.CRITICAL { background: rgba(232,84,84,.07); border-color: rgba(232,84,84,.25); }
+  .severity-banner.HIGH     { background: rgba(232,112,64,.07); border-color: rgba(232,112,64,.25); }
+  .severity-banner.MEDIUM   { background: rgba(232,167,53,.07); border-color: rgba(232,167,53,.25); }
+  .severity-banner.LOW      { background: rgba(46,184,122,.07); border-color: rgba(46,184,122,.25); }
+
+  .sev-icon { font-size: 24px; flex-shrink: 0; }
+  .sev-label { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+  .sev-label.CRITICAL { color: var(--red); }
+  .sev-label.HIGH     { color: var(--orange); }
+  .sev-label.MEDIUM   { color: var(--yellow); }
+  .sev-label.LOW      { color: var(--green); }
+  .sev-summary { font-size: 13px; color: var(--text); line-height: 1.6; }
+
+  /* ── Grid layout for cards ── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .cards-grid.full { grid-template-columns: 1fr; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .card-icon { font-size: 16px; }
+  .card-title { font-weight: 600; font-size: 13px; color: var(--text-bright); }
+  .card-count {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    background: var(--border2);
+    padding: 2px 8px;
+    border-radius: 20px;
+    color: var(--text-dim);
+  }
+  .card-body { padding: 16px 18px; }
+
+  /* ── Hypothesis cards ── */
+  .hypothesis {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hypothesis::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+  }
+  .hypothesis.HIGH    { background: rgba(232,84,84,.04); }
+  .hypothesis.HIGH::before { background: var(--red); }
+  .hypothesis.MEDIUM  { background: rgba(232,167,53,.04); }
+  .hypothesis.MEDIUM::before { background: var(--yellow); }
+  .hypothesis.LOW     { background: rgba(79,142,247,.04); }
+  .hypothesis.LOW::before { background: var(--accent); }
+
+  .hyp-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .hyp-rank {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--border2);
+    font-family: var(--mono); font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim); flex-shrink: 0;
+    font-weight: 600;
+  }
+  .hyp-title { font-weight: 600; font-size: 13px; color: var(--text-bright); flex: 1; }
+  .conf-badge {
+    font-family: var(--mono); font-size: 9px;
+    padding: 2px 7px; border-radius: 3px;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .conf-badge.HIGH   { background: rgba(232,84,84,.15); color: var(--red); }
+  .conf-badge.MEDIUM { background: rgba(232,167,53,.15); color: var(--yellow); }
+  .conf-badge.LOW    { background: rgba(79,142,247,.15); color: var(--accent); }
+
+  .hyp-explanation { font-size: 12px; color: var(--text); line-height: 1.6; margin-bottom: 8px; }
+
+  .causal-chain {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .evidence-list { margin-top: 8px; }
+  .evidence-item {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    padding: 3px 0;
+    padding-left: 14px;
+    position: relative;
+  }
+  .evidence-item::before { content: '▸'; position: absolute; left: 0; color: var(--accent); }
+
+  /* ── Action items ── */
+  .action-item {
+    display: flex; gap: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    background: var(--surface2);
+  }
+  .action-num {
+    width: 20px; height: 20px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; flex-shrink: 0; margin-top: 1px;
+  }
+  .action-content { flex: 1; }
+  .action-text { font-size: 12px; font-weight: 500; color: var(--text-bright); margin-bottom: 4px; line-height: 1.5; }
+  .action-meta { display: flex; gap: 8px; flex-wrap: wrap; }
+  .action-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid var(--border2);
+    color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .action-tag.owner { border-color: rgba(79,142,247,.3); color: var(--accent); }
+  .action-tag.effort { border-color: rgba(46,184,122,.3); color: var(--green); }
+
+  /* ── Signature matches ── */
+  .sig-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    background: var(--surface2);
+  }
+  .sig-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .sig-name { font-size: 12px; font-weight: 600; color: var(--text-bright); flex: 1; }
+  .sig-cat {
+    font-family: var(--mono); font-size: 9px;
+    padding: 2px 7px; border-radius: 3px;
+    background: rgba(124,92,252,.1); color: var(--purple);
+    border: 1px solid rgba(124,92,252,.2);
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .sev-pip {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .sev-pip.HIGH     { background: var(--orange); }
+  .sev-pip.CRITICAL { background: var(--red); }
+  .sev-pip.MEDIUM   { background: var(--yellow); }
+  .sev-pip.LOW      { background: var(--green); }
+
+  .sig-desc { font-size: 11px; color: var(--text-dim); line-height: 1.6; margin-bottom: 8px; }
+
+  details { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
+  summary {
+    font-family: var(--mono); font-size: 10px; color: var(--accent);
+    cursor: pointer; letter-spacing: .3px;
+    list-style: none;
+    display: flex; align-items: center; gap: 6px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: '▸'; transition: transform .2s; }
+  details[open] summary::before { transform: rotate(90deg); }
+
+  .rem-list { margin-top: 10px; }
+  .rem-item {
+    font-size: 11px; color: var(--text);
+    padding: 5px 0; padding-left: 16px;
+    border-bottom: 1px solid var(--border);
+    position: relative; line-height: 1.6;
+  }
+  .rem-item:last-child { border-bottom: none; }
+  .rem-item::before { content: '→'; position: absolute; left: 0; color: var(--green); font-family: var(--mono); }
+
+  /* ── Timeline ── */
+  .timeline { position: relative; padding-left: 16px; }
+  .timeline::before {
+    content: '';
+    position: absolute; left: 5px; top: 8px; bottom: 8px;
+    width: 1px; background: var(--border2);
+  }
+  .tl-item {
+    position: relative;
+    padding: 6px 0 6px 18px;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .tl-dot {
+    position: absolute; left: -8px;
+    width: 8px; height: 8px; border-radius: 50%;
+    margin-top: 5px; flex-shrink: 0;
+    border: 1.5px solid var(--bg);
+  }
+  .tl-dot.ERROR    { background: var(--red); }
+  .tl-dot.CRITICAL { background: var(--red2); box-shadow: 0 0 6px var(--red); }
+  .tl-dot.FAULT    { background: var(--purple); }
+  .tl-dot.WARN     { background: var(--yellow); }
+  .tl-dot.INFO     { background: var(--text-dim); }
+
+  .tl-ts   { font-family: var(--mono); font-size: 10px; color: var(--text-dim); white-space: nowrap; flex-shrink: 0; }
+  .tl-src  { font-family: var(--mono); font-size: 10px; color: var(--accent); flex-shrink: 0; }
+  .tl-msg  { font-size: 11px; color: var(--text); line-height: 1.5; }
+
+  /* ── Systemic fixes ── */
+  .fix-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    background: var(--surface2);
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .fix-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .fix-content { flex: 1; }
+  .fix-text { font-size: 12px; color: var(--text-bright); font-weight: 500; margin-bottom: 4px; line-height: 1.5; }
+  .fix-prevents { font-size: 11px; color: var(--text-dim); }
+  .fix-complexity {
+    font-family: var(--mono); font-size: 9px;
+    padding: 2px 7px; border-radius: 3px;
+    margin-left: auto; flex-shrink: 0;
+  }
+  .fix-complexity.LOW    { background: rgba(46,184,122,.1); color: var(--green); border: 1px solid rgba(46,184,122,.2); }
+  .fix-complexity.MEDIUM { background: rgba(232,167,53,.1); color: var(--yellow); border: 1px solid rgba(232,167,53,.2); }
+  .fix-complexity.HIGH   { background: rgba(232,84,84,.1); color: var(--red); border: 1px solid rgba(232,84,84,.2); }
+
+  /* ── Data gaps ── */
+  .gap-item {
+    font-size: 12px; color: var(--text-dim);
+    padding: 7px 0; padding-left: 18px;
+    border-bottom: 1px solid var(--border);
+    position: relative; line-height: 1.6;
+  }
+  .gap-item:last-child { border-bottom: none; }
+  .gap-item::before { content: '?'; position: absolute; left: 0; color: var(--yellow); font-family: var(--mono); font-weight: 600; }
+
+  /* ── Source breakdown ── */
+  .source-bar-item { margin-bottom: 10px; }
+  .source-bar-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .source-name { font-family: var(--mono); font-size: 11px; color: var(--text); }
+  .source-count { font-family: var(--mono); font-size: 11px; color: var(--red); }
+  .source-bar-track { height: 4px; background: var(--border2); border-radius: 2px; overflow: hidden; }
+  .source-bar-fill  { height: 100%; background: linear-gradient(90deg, var(--red), var(--orange)); border-radius: 2px; transition: width .6s ease; }
+
+  /* ── Crash panel ── */
+  .crash-panel {
+    background: rgba(232,84,84,.05);
+    border: 1px solid rgba(232,84,84,.2);
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  .crash-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .crash-title { font-weight: 600; font-size: 14px; color: var(--red); }
+  .crash-stack {
+    font-family: var(--mono); font-size: 10px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 12px 14px;
+    overflow-x: auto; white-space: pre;
+    color: var(--text-dim); line-height: 1.7;
+  }
+  .crash-stack .frame-app { color: var(--orange); }
+  .crash-meta { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+  .crash-meta-item { font-size: 11px; }
+  .crash-meta-item strong { color: var(--text-bright); font-family: var(--mono); font-size: 11px; }
+
+  .tab-bar {
+    display: flex; gap: 2px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .tab {
+    padding: 10px 16px;
+    font-size: 12px; font-weight: 500;
+    color: var(--text-dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  /* ── Animate in ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .anim { animation: fadeUp .35s ease both; }
+  .anim-d1 { animation-delay: .05s; }
+  .anim-d2 { animation-delay: .10s; }
+  .anim-d3 { animation-delay: .15s; }
+  .anim-d4 { animation-delay: .20s; }
+  .anim-d5 { animation-delay: .25s; }
+
+  .fallback-note {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--text-dim); padding: 8px 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; margin-bottom: 16px;
+  }
+
+  /* scrollbars */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⌘</div>
+    <div>
+      <div class="logo-text">LogWise</div>
+      <div class="logo-sub">macOS Log Intelligence Platform</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="badge badge-rules" id="analysis-mode-badge">RULE-BASED</span>
+  </div>
+</header>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside>
+    <div class="upload-zone" id="upload-zone">
+      <input type="file" id="file-input" multiple accept=".log,.txt,.ips,.crash,.json">
+      <div class="upload-icon">📂</div>
+      <div class="upload-label">
+        <strong>Drop log files here</strong>
+        .log · .ips · .crash · unified syslog
+      </div>
+    </div>
+
+    <div class="section-label">Files to analyze</div>
+    <div class="file-list" id="file-list">
+      <div style="font-size:11px; color:var(--text-dim); text-align:center; padding:8px 0;">
+        No files selected — will use sample logs
+      </div>
+    </div>
+
+    <button class="btn-analyze" id="analyze-btn" onclick="runAnalysis()">
+      🔍 Analyze Logs
+    </button>
+
+    <div class="stat-grid" id="stat-grid" style="display:none">
+      <div class="stat-card">
+        <div class="stat-num num-blue" id="stat-total">—</div>
+        <div class="stat-label">Entries</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num num-red" id="stat-errors">—</div>
+        <div class="stat-label">Errors</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num num-orange" id="stat-critical">—</div>
+        <div class="stat-label">Critical</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num num-yellow" id="stat-clusters">—</div>
+        <div class="stat-label">Clusters</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main>
+    <!-- Empty state -->
+    <div id="empty-state">
+      <div class="empty-icon">🔬</div>
+      <div class="empty-title">Autonomous Log Diagnosis</div>
+      <div class="empty-sub">
+        Drop your macOS app logs, system logs, or crash reports. LogWise will cluster errors, detect failure patterns, and generate root-cause hypotheses — no customer input required.
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loading-text">Parsing log files…</div>
+    </div>
+
+    <!-- Results -->
+    <div id="results">
+      <!-- Severity banner -->
+      <div id="severity-banner" class="severity-banner anim"></div>
+
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <div class="tab active" onclick="switchTab('diagnosis')">🧠 AI Diagnosis</div>
+        <div class="tab" onclick="switchTab('signatures')">📋 Signatures</div>
+        <div class="tab" onclick="switchTab('timeline')">⏱ Timeline</div>
+        <div class="tab" onclick="switchTab('crashes')">💥 Crashes</div>
+      </div>
+
+      <!-- Diagnosis tab -->
+      <div class="tab-pane active" id="tab-diagnosis">
+        <div id="fallback-note" class="fallback-note" style="display:none">
+          ℹ️ Rule-based analysis mode — set ANTHROPIC_API_KEY on the server for AI-powered diagnosis
+        </div>
+
+        <div class="cards-grid full anim anim-d1" id="hypotheses-section">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">🔍</span>
+              <span class="card-title">Root Cause Hypotheses</span>
+              <span class="card-count" id="hyp-count">0</span>
+            </div>
+            <div class="card-body" id="hypotheses-body"></div>
+          </div>
+        </div>
+
+        <div class="cards-grid anim anim-d2">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">⚡</span>
+              <span class="card-title">Immediate Actions</span>
+            </div>
+            <div class="card-body" id="actions-body"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">🏗</span>
+              <span class="card-title">Systemic Fixes</span>
+            </div>
+            <div class="card-body" id="fixes-body"></div>
+          </div>
+        </div>
+
+        <div class="cards-grid anim anim-d3">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">📊</span>
+              <span class="card-title">Error Sources</span>
+            </div>
+            <div class="card-body" id="sources-body"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-icon">❓</span>
+              <span class="card-title">Data Gaps</span>
+            </div>
+            <div class="card-body" id="gaps-body"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Signatures tab -->
+      <div class="tab-pane" id="tab-signatures">
+        <div id="signatures-body"></div>
+      </div>
+
+      <!-- Timeline tab -->
+      <div class="tab-pane" id="tab-timeline">
+        <div class="timeline" id="timeline-body"></div>
+      </div>
+
+      <!-- Crashes tab -->
+      <div class="tab-pane" id="tab-crashes">
+        <div id="crashes-body"></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+let selectedFiles = [];
+let currentData = null;
+
+// ── File handling ────────────────────────────────────────────────────────────
+const fileInput = document.getElementById('file-input');
+const uploadZone = document.getElementById('upload-zone');
+
+fileInput.addEventListener('change', e => {
+  selectedFiles = Array.from(e.target.files);
+  renderFileList();
+});
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag');
+  selectedFiles = Array.from(e.dataTransfer.files);
+  renderFileList();
+});
+
+function renderFileList() {
+  const list = document.getElementById('file-list');
+  if (!selectedFiles.length) {
+    list.innerHTML = '<div style="font-size:11px; color:var(--text-dim); text-align:center; padding:8px 0;">No files selected — will use sample logs</div>';
+    return;
+  }
+  list.innerHTML = selectedFiles.map(f => `
+    <div class="file-item">
+      <div class="file-dot"></div>
+      <div class="file-name">${f.name}</div>
+      <div class="file-size">${(f.size/1024).toFixed(1)}k</div>
+    </div>
+  `).join('');
+}
+
+// ── Analysis ─────────────────────────────────────────────────────────────────
+async function runAnalysis() {
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Analyzing…';
+
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('results').classList.remove('active');
+  setLoading(true, 'Parsing log files…');
+
+  try {
+    const formData = new FormData();
+    selectedFiles.forEach((f, i) => formData.append(`file_${i}`, f, f.name));
+
+    setTimeout(() => setLoading(true, 'Detecting failure patterns…'), 800);
+    setTimeout(() => setLoading(true, 'Running AI root cause analysis…'), 1800);
+
+    const resp = await fetch('/api/analyze', { method: 'POST', body: formData });
+    const data = await resp.json();
+
+    if (!data.success) throw new Error(data.error || 'Analysis failed');
+
+    currentData = data;
+    renderResults(data);
+
+  } catch(err) {
+    console.error(err);
+    document.getElementById('empty-state').classList.remove('hidden');
+    document.getElementById('empty-state').querySelector('.empty-sub').textContent =
+      '❌ Analysis failed: ' + err.message;
+  } finally {
+    setLoading(false);
+    btn.disabled = false;
+    btn.textContent = '🔍 Analyze Logs';
+  }
+}
+
+function setLoading(on, msg='') {
+  document.getElementById('loading').classList.toggle('active', on);
+  if (msg) document.getElementById('loading-text').textContent = msg;
+}
+
+// ── Rendering ─────────────────────────────────────────────────────────────────
+function renderResults(data) {
+  const { analysis, crashes, ai } = data;
+
+  // Update sidebar stats
+  document.getElementById('stat-grid').style.display = 'grid';
+  document.getElementById('stat-total').textContent = analysis.total_entries;
+  document.getElementById('stat-errors').textContent = analysis.error_count;
+  document.getElementById('stat-critical').textContent = analysis.critical_count;
+  document.getElementById('stat-clusters').textContent = analysis.unique_error_clusters;
+
+  // Badge
+  const isAI = ai && !ai._fallback;
+  document.getElementById('analysis-mode-badge').textContent = isAI ? 'AI-POWERED' : 'RULE-BASED';
+  document.getElementById('analysis-mode-badge').className = 'badge ' + (isAI ? 'badge-ai' : 'badge-rules');
+
+  // Severity banner
+  const sev = ai?.severity_assessment?.overall || 'HIGH';
+  const sevIcons = { CRITICAL:'🚨', HIGH:'⚠️', MEDIUM:'⚡', LOW:'✅' };
+  const banner = document.getElementById('severity-banner');
+  banner.className = `severity-banner ${sev} anim`;
+  banner.innerHTML = `
+    <span class="sev-icon">${sevIcons[sev]||'⚠️'}</span>
+    <div>
+      <div class="sev-label ${sev}">Severity: ${sev}</div>
+      <div class="sev-summary">${ai?.executive_summary || analysis.summary}</div>
+    </div>
+  `;
+
+  // Fallback note
+  document.getElementById('fallback-note').style.display = ai?._fallback ? 'block' : 'none';
+
+  renderHypotheses(ai?.root_cause_hypotheses || []);
+  renderActions(ai?.immediate_actions || []);
+  renderFixes(ai?.systemic_fixes || []);
+  renderSources(analysis.top_error_sources || []);
+  renderGaps(ai?.data_gaps || []);
+  renderSignatures(analysis.matched_signatures || []);
+  renderTimeline(analysis.timeline || []);
+  renderCrashes(crashes || []);
+
+  document.getElementById('results').classList.add('active');
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+}
+
+function renderHypotheses(hyps) {
+  document.getElementById('hyp-count').textContent = hyps.length;
+  document.getElementById('hypotheses-body').innerHTML = hyps.map(h => `
+    <div class="hypothesis ${h.confidence}">
+      <div class="hyp-header">
+        <div class="hyp-rank">${h.rank}</div>
+        <div class="hyp-title">${esc(h.title)}</div>
+        <span class="conf-badge ${h.confidence}">${h.confidence}</span>
+      </div>
+      <div class="hyp-explanation">${esc(h.explanation)}</div>
+      ${h.causal_chain ? `<div class="causal-chain">⛓ ${esc(h.causal_chain)}</div>` : ''}
+      ${h.evidence?.length ? `
+        <div class="evidence-list">
+          ${h.evidence.map(e => `<div class="evidence-item">${esc(e)}</div>`).join('')}
+        </div>` : ''}
+    </div>
+  `).join('') || '<div style="color:var(--text-dim);font-size:12px">No hypotheses generated</div>';
+}
+
+function renderActions(actions) {
+  document.getElementById('actions-body').innerHTML = actions.map((a, i) => `
+    <div class="action-item">
+      <div class="action-num">${i+1}</div>
+      <div class="action-content">
+        <div class="action-text">${esc(a.action)}</div>
+        <div class="action-meta">
+          <span class="action-tag owner">${esc(a.owner)}</span>
+          <span class="action-tag effort">${esc(a.effort)}</span>
+        </div>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--text-dim);font-size:12px">No immediate actions identified</div>';
+}
+
+function renderFixes(fixes) {
+  const icons = { LOW:'🌱', MEDIUM:'🔧', HIGH:'🏗' };
+  document.getElementById('fixes-body').innerHTML = fixes.map(f => `
+    <div class="fix-item">
+      <div class="fix-icon">${icons[f.complexity]||'🔧'}</div>
+      <div class="fix-content">
+        <div class="fix-text">${esc(f.fix)}</div>
+        <div class="fix-prevents">Prevents: ${esc(f.prevents)}</div>
+      </div>
+      <span class="fix-complexity ${f.complexity}">${f.complexity}</span>
+    </div>
+  `).join('') || '<div style="color:var(--text-dim);font-size:12px">No systemic fixes identified</div>';
+}
+
+function renderSources(sources) {
+  const max = sources[0]?.count || 1;
+  document.getElementById('sources-body').innerHTML = sources.map(s => `
+    <div class="source-bar-item">
+      <div class="source-bar-header">
+        <span class="source-name">${esc(s.source)}</span>
+        <span class="source-count">${s.count}</span>
+      </div>
+      <div class="source-bar-track">
+        <div class="source-bar-fill" style="width:${Math.round(s.count/max*100)}%"></div>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--text-dim);font-size:12px">No data</div>';
+}
+
+function renderGaps(gaps) {
+  document.getElementById('gaps-body').innerHTML = gaps.map(g =>
+    `<div class="gap-item">${esc(g)}</div>`
+  ).join('') || '<div style="color:var(--text-dim);font-size:12px">No data gaps identified</div>';
+}
+
+function renderSignatures(sigs) {
+  document.getElementById('signatures-body').innerHTML = sigs.map(s => `
+    <div class="sig-item">
+      <div class="sig-header">
+        <div class="sev-pip ${s.severity}"></div>
+        <div class="sig-name">${esc(s.name)}</div>
+        <span class="sig-cat">${esc(s.category)}</span>
+      </div>
+      <div class="sig-desc">${esc(s.description)}</div>
+      <details>
+        <summary>Remediation steps (${s.remediation?.length||0})</summary>
+        <div class="rem-list">
+          ${(s.remediation||[]).map(r => `<div class="rem-item">${esc(r)}</div>`).join('')}
+        </div>
+      </details>
+    </div>
+  `).join('') || '<div style="color:var(--text-dim);font-size:12px">No known failure signatures matched</div>';
+}
+
+function renderTimeline(events) {
+  document.getElementById('timeline-body').innerHTML = events.map(e => `
+    <div class="tl-item">
+      <div class="tl-dot ${e.level}"></div>
+      <div class="tl-ts">${e.timestamp.substring(11,19)}</div>
+      <div class="tl-src">${esc(e.source.split('/').pop())}</div>
+      <div class="tl-msg">${esc(e.message.substring(0,120))}</div>
+    </div>
+  `).join('') || '<div style="color:var(--text-dim);font-size:12px;padding:16px">No timeline events</div>';
+}
+
+function renderCrashes(crashes) {
+  if (!crashes.length) {
+    document.getElementById('crashes-body').innerHTML =
+      '<div style="color:var(--text-dim);font-size:12px;padding:16px">No crash reports found</div>';
+    return;
+  }
+  document.getElementById('crashes-body').innerHTML = crashes.map(cr => `
+    <div class="crash-panel">
+      <div class="crash-header">
+        <span style="font-size:20px">💥</span>
+        <div class="crash-title">${esc(cr.process)}</div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-left:auto">${esc(cr.timestamp)}</span>
+      </div>
+      <div class="crash-meta">
+        <div class="crash-meta-item">Exception: <strong>${esc(cr.exception_type)}</strong></div>
+        <div class="crash-meta-item">Subtype: <strong>${esc(cr.exception_subtype)}</strong></div>
+        <div class="crash-meta-item">OS: <strong>${esc(cr.os_version)}</strong></div>
+        <div class="crash-meta-item">Version: <strong>${esc(cr.version)}</strong></div>
+      </div>
+      ${cr.app_specific_info ? `<div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;font-style:italic">${esc(cr.app_specific_info)}</div>` : ''}
+      <div class="crash-stack">${renderStack(cr.stack_frames)}</div>
+    </div>
+  `).join('');
+}
+
+function renderStack(frames) {
+  return (frames||[]).map((f, i) =>
+    `<span class="${f.library.includes('Acme')||f.library.includes('com.acme') ? 'frame-app' : ''}">#${i}  ${f.library.padEnd(30)} ${f.symbol}</span>`
+  ).join('\n');
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+function esc(s) {
+  if (!s) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// Auto-run with sample logs on first load
+window.addEventListener('load', () => {
+  setTimeout(runAnalysis, 400);
+});
+</script>
+</body>
+</html>

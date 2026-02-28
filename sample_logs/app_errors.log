@@ -1,0 +1,35 @@
+2025-11-14 08:01:02.341 [INFO] [main] AppDelegate - Application launched (version 4.2.1, build 1041)
+2025-11-14 08:01:02.512 [INFO] [main] ConfigManager - Loading configuration from /Library/Application Support/Acme/config.plist
+2025-11-14 08:01:02.611 [INFO] [network] NetworkMonitor - Network reachability: WiFi
+2025-11-14 08:01:03.100 [INFO] [auth] AuthService - Attempting SSO token refresh for user jdoe@acme.com
+2025-11-14 08:01:03.442 [ERROR] [auth] AuthService - Token refresh failed: NSURLErrorDomain -1009 (The Internet connection appears to be offline)
+2025-11-14 08:01:03.443 [WARN] [auth] AuthService - Falling back to cached credentials (age: 43200s)
+2025-11-14 08:01:04.001 [INFO] [sync] SyncEngine - Starting background sync
+2025-11-14 08:01:04.312 [ERROR] [sync] SyncEngine - Upload failed for file "Q4_Report_FINAL.xlsx": HTTP 403 Forbidden
+2025-11-14 08:01:04.313 [ERROR] [sync] SyncEngine - Upload failed for file "client_contacts.csv": HTTP 403 Forbidden
+2025-11-14 08:01:04.901 [CRITICAL] [sync] SyncEngine - Sync aborted after 2 consecutive auth failures
+2025-11-14 08:01:05.010 [INFO] [ui] MainWindowController - Showing sync error banner
+2025-11-14 08:02:15.221 [INFO] [main] AppDelegate - User action: retry sync
+2025-11-14 08:02:15.230 [ERROR] [auth] AuthService - Token refresh failed: NSURLErrorDomain -1009
+2025-11-14 08:02:16.001 [CRITICAL] [sync] SyncEngine - Sync failed: no valid auth token available
+2025-11-14 08:15:00.001 [INFO] [main] AppDelegate - Background task scheduled
+2025-11-14 08:15:00.021 [ERROR] [db] DatabaseManager - SQLite error: SQLITE_BUSY - database is locked
+2025-11-14 08:15:00.022 [WARN] [db] DatabaseManager - Retrying in 500ms (attempt 1/5)
+2025-11-14 08:15:00.524 [ERROR] [db] DatabaseManager - SQLite error: SQLITE_BUSY - database is locked
+2025-11-14 08:15:00.525 [WARN] [db] DatabaseManager - Retrying in 500ms (attempt 2/5)
+2025-11-14 08:15:01.026 [ERROR] [db] DatabaseManager - SQLite error: SQLITE_BUSY - database is locked
+2025-11-14 08:15:01.027 [WARN] [db] DatabaseManager - Retrying in 500ms (attempt 3/5)
+2025-11-14 08:15:01.528 [CRITICAL] [db] DatabaseManager - Exceeded retry limit. Aborting operation.
+2025-11-14 08:15:01.530 [INFO] [ui] MainWindowController - Showing critical error dialog
+2025-11-14 08:30:12.004 [INFO] [perf] MemoryMonitor - RSS: 412MB VSZ: 2.1GB (threshold: 400MB)
+2025-11-14 08:30:12.006 [WARN] [perf] MemoryMonitor - Memory pressure HIGH - requesting GC
+2025-11-14 08:30:12.801 [INFO] [perf] MemoryMonitor - After GC: RSS: 398MB
+2025-11-14 08:45:03.100 [INFO] [plugin] PluginManager - Loading plugin: AcmeDocProcessor v2.1.0
+2025-11-14 08:45:03.201 [ERROR] [plugin] PluginManager - Plugin load failed: Library not loaded: @rpath/AcmeCore.framework/Versions/A/AcmeCore
+2025-11-14 08:45:03.202 [ERROR] [plugin] PluginManager - Referenced from: /Library/Application Support/Acme/Plugins/AcmeDocProcessor.plugin
+2025-11-14 08:45:03.203 [ERROR] [plugin] PluginManager - Reason: no suitable image found. Did find: /Library/Application Support/Acme/Frameworks/AcmeCore.framework/Versions/A/AcmeCore: code signature in (/Library/Application Support/Acme/Frameworks/AcmeCore.framework/Versions/A/AcmeCore) not valid for use in process using Library Validation
+2025-11-14 08:45:03.204 [WARN] [plugin] PluginManager - Disabling plugin: AcmeDocProcessor
+2025-11-14 09:00:00.001 [INFO] [main] AppDelegate - Hourly health check
+2025-11-14 09:00:00.100 [ERROR] [network] NetworkMonitor - DNS resolution failed for api.acme.internal
+2025-11-14 09:00:00.101 [ERROR] [network] NetworkMonitor - DNS resolution failed for auth.acme.internal  
+2025-11-14 09:00:00.200 [CRITICAL] [main] HealthCheck - 3 of 5 health checks failed. App in degraded state.

@@ -9,6 +9,7 @@ import os
 import sys
 import traceback
 from pathlib import Path
+from typing import Dict
 
 from flask import Flask, jsonify, request, send_from_directory
 
@@ -31,7 +32,7 @@ def add_cors(r):
 SAMPLE_LOGS_DIR = Path(__file__).parent / "sample_logs"
 
 
-def load_sample_logs() -> dict[str, str]:
+def load_sample_logs() -> Dict[str, str]:
     """Load all sample log files from the sample_logs directory."""
     files = {}
     for p in SAMPLE_LOGS_DIR.iterdir():

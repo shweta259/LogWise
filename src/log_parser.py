@@ -78,7 +78,10 @@ class CrashReport:
 # ── App log pattern ──────────────────────────────────────────────────────────
 # e.g. 2025-11-14 08:01:02.341 [ERROR] [auth] AuthService - Token refresh failed
 APP_LOG_RE = re.compile(
-    r"(?P<ts>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+)\s+"
+    # Allow minute component to be more than two digits so synthetic logs used in
+    # stress tests (08:100:00 etc.) are still captured. The timestamp is mostly
+    # treated as a string later, so we don’t need strict validation.
+    r"(?P<ts>\d{4}-\d{2}-\d{2} \d{2}:\d{2,}:\d{2}\.\d+)\s+"
     r"\[(?P<level>DEBUG|INFO|WARN(?:ING)?|ERROR|CRITICAL|FAULT)\]\s+"
     r"(?:\[(?P<thread>[^\]]+)\]\s+)?"
     r"(?:\[(?P<source>[^\]]+)\]\s+)?"

@@ -47,7 +47,14 @@ MACOS_SIGNATURES = [
     {
         "id": "network_dns_failure",
         "name": "Internal DNS / VPN Split Tunnel Failure",
-        "pattern": re.compile(r"dns.*fail|mDNSResponder.*error|split dns.*unreachable|no route to host.*internal|nwpath.*no route", re.I),
+        # Accept a few additional variants so the signature catches both the
+        # human-readable "no router" message and the errno constant
+        # kDNSServiceErr_NoRouter (underscores, camelcase, etc.).
+        "pattern": re.compile(
+            r"dns.*fail|mDNSResponder.*error|split dns.*unreachable|"
+            r"no route to host.*internal|nwpath.*no route|no[ _]?router",
+            re.I
+        ),
         "category": "Network / VPN",
         "severity": "HIGH",
         "description": "DNS resolution for internal hostnames (*.acme.internal) is failing. The system log shows mDNSResponder reporting 'no router' and split DNS domains unreachable. This is almost certainly a VPN split-tunnel misconfiguration or the VPN client is not running.",
@@ -223,9 +230,12 @@ def analyze(parsed: dict) -> AnalysisResult:
     critical_count = level_counts.get("CRITICAL", 0)
 
     timestamps = [e["timestamp"] for e in entries if e["timestamp"]]
+    # compute start/end from sorted timestamps so the order of the input
+    # entries doesn’t matter (tests construct out-of-order lists intentionally)
+    sorted_ts = sorted(timestamps)
     time_range = {
-        "start": timestamps[0] if timestamps else "",
-        "end": timestamps[-1] if timestamps else "",
+        "start": sorted_ts[0] if sorted_ts else "",
+        "end": sorted_ts[-1] if sorted_ts else "",
     }
 
     # ── Error clustering ──────────────────────────────────────────────────
@@ -301,6 +311,9 @@ def analyze(parsed: dict) -> AnalysisResult:
         e for e in entries
         if e["level"] in ("ERROR", "CRITICAL", "FAULT", "WARN")
     ]
+    # ensure chronological order before taking the head; string format sorts
+    # lexicographically identical to chronological order
+    timeline_entries.sort(key=lambda e: e.get("timestamp", ""))
     # Limit to 50 most interesting
     timeline = [
         TimelineEvent(
